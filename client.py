@@ -24,6 +24,7 @@ data = {}
 x = []
 y = []
 rtoy = []
+rto2y = []
 
 def sender():
     i = 1
@@ -37,8 +38,13 @@ def sender():
 
 def receiver():
     avg = 0
+    avg2 = 0
     while True:
-        message, server = clientSocket.recvfrom(2048)
+        try:
+            message, server = clientSocket.recvfrom(2048)
+        except socket.error:
+            print("Timeout occurred")
+            continue
         message = message.decode()
         if message in data:
             # print((message, time.time() - data[message]))
@@ -46,7 +52,9 @@ def receiver():
             elapsed = time.time() - data[message]
             y.append(elapsed)
             avg = elapsed if avg == 0 or len(y) < 3 else avg * (1 - alpha) + elapsed * alpha
+            avg2 = avg if avg2 == 0 or len(y) < 3 else avg2 * (1 - alpha) + avg * alpha
             rtoy.append(avg)
+            rto2y.append(avg2)
             data.pop(message)
         else:
             print("unknown sequence number %s" % (message))
@@ -62,6 +70,7 @@ GRAPH_WIDTH = 300
 fig, ax = plt.subplots()
 line, = ax.plot([],[])
 rtoline, = ax.plot([],[], color='red')
+rto2line, = ax.plot([],[], color='green')
 ax.grid()
 
 def init():
@@ -73,6 +82,7 @@ def init():
 def animate(i):
     line.set_data(x, y)
     rtoline.set_data(x, rtoy)
+    rto2line.set_data(x, rto2y)
     current = max(GRAPH_WIDTH, len(y))
     ax.set_xlim(current - GRAPH_WIDTH + 1, current)
     if i % 50 == 0:
