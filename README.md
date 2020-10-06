@@ -2,7 +2,7 @@
 
 ## How-to
 
-Run `python3 client.py` will plot a dynamic line graph with blue lines (RTTs) and red lines (RTOs).
+Run `python3 client.py` will plot a dynamic line graph with blue lines (RTTs), red lines (RTOs) and green lines (moving average of RTOs).
 
 ## Running Sample
 
