@@ -3,13 +3,16 @@ import sys
 import socket
 import threading
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib import animation
 
-host = "127.0.0.1" #set to server ip or hostname
+host = "167.172.203.146" #set to server ip or hostname
 port = 4098
 
 timeout = 2
+alpha = 0.2
+beta = 0.3
 
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 clientSocket.settimeout(timeout)
@@ -20,6 +23,7 @@ data = {}
 
 x = []
 y = []
+rtoy = []
 
 def sender():
     i = 1
@@ -30,7 +34,9 @@ def sender():
         clientSocket.sendto(message, (host, port))
         i += 1
 
+
 def receiver():
+    avg = 0
     while True:
         message, server = clientSocket.recvfrom(2048)
         message = message.decode()
@@ -39,6 +45,8 @@ def receiver():
             x.append(int(message))
             elapsed = time.time() - data[message]
             y.append(elapsed)
+            avg = elapsed if avg == 0 or len(y) < 3 else avg * (1 - alpha) + elapsed * alpha
+            rtoy.append(avg)
             data.pop(message)
         else:
             print("unknown sequence number %s" % (message))
@@ -49,22 +57,27 @@ t.start()
 t2 = threading.Thread(target=receiver)
 t2.start()
 
-GRAPH_WIDTH = 500
+GRAPH_WIDTH = 300
 
 fig, ax = plt.subplots()
 line, = ax.plot([],[])
+rtoline, = ax.plot([],[], color='red')
 ax.grid()
 
 def init():
-    ax.set_ylim(0,0.025)
+    ax.set_ylim(0.07,0.15)
     ax.set_xlim(1, GRAPH_WIDTH)
     line.set_data(x, y)
     return line,
 
 def animate(i):
-    line.set_data(np.array(x), np.array(y))
+    line.set_data(x, y)
+    rtoline.set_data(x, rtoy)
     current = max(GRAPH_WIDTH, len(y))
     ax.set_xlim(current - GRAPH_WIDTH + 1, current)
+    if i % 50 == 0:
+        sample = np.array(y[-GRAPH_WIDTH:])
+        ax.set_ylim(np.min(sample), np.max(sample))
     return line,
 
 anim = animation.FuncAnimation(fig, animate, interval=10, init_func=init)
