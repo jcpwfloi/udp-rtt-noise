@@ -90,7 +90,11 @@ def animate(i):
         ax.set_ylim(np.min(sample), np.max(sample))
     return line,
 
+def savegif(anim):
+    anim.save('animation.gif', writer='imagemagick', fps=30)
+
 anim = animation.FuncAnimation(fig, animate, interval=10, init_func=init)
 
 plt.show()
+
 
